@@ -26,7 +26,7 @@ def load_state():
     
     model = mymodel.Backbone(50, 1.,'ir_se').to(device)
     print('IR-SE-50 generated')
-    checkpoint = torch.load("../model_ir_se50.pth")
+    checkpoint = torch.load("model_ir_se50.pth")
     model_dict = model.state_dict()
 
     checkpoint = {k: v for k, v in checkpoint.items() if
@@ -176,9 +176,9 @@ def calSim(feature, g_mat):
 def evaluate():
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     model = load_state()
-    image_path = "../../Dataset/211022_Data/Images/Training_3_1000_H/Trainset/gt/"
-    sketch_path = "../../Dataset/211022_Data/Images/Training_3_1000_H/Trainset/sketch/"
-    save_path = "../../Dataset/201022_Results/prediction/"
+    image_path = "../Dataset/211022_Data/Images/Training_3_1000_H/Trainset/gt/"
+    sketch_path = "../Dataset/211022_Data/Images/Training_3_1000_H/Trainset/sketch/"
+    save_path = "../Dataset/201022_Results/prediction/"
     os.makedirs(save_path, exist_ok=True)
 
     class_list, g_file, p_file = getGalnProbeSet(image_path,sketch_path)

@@ -194,10 +194,10 @@ def calSim(feature, g_mat):
 
 def evaluate():
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    image_path = "../Dataset/211022_Data/Images/Training_1_1000_H/Testset/gt/"
-    sketch_path = "../Dataset/211022_Data/Images/Training_1_1000_H/Testset/sketch/"
-    save_path = "../Dataset/201022_Results/prediction/"
-    model_path='../Dataset/211022_Data/Images/Training_1_1000_H/Results/model_120_211122.pt'
+    image_path = "../../Dataset/211022_Data/Images/Training_1_1000_H/Testset/gt/"
+    sketch_path = "../../Dataset/211022_Data/Images/Training_1_1000_H/Testset/sketch/"
+    save_path = "../../Dataset/201022_Results/prediction/"
+    model_path='../../Dataset/211022_Data/Images/Training_1_1000_H/Results/model_120_211122.pt'
     model = load_state(model_path)
     os.makedirs(save_path, exist_ok=True)
 
