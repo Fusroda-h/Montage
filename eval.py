@@ -14,14 +14,12 @@ from pathlib import Path
 from numpy import *
 import matplotlib.pyplot as plt
 import operator
-
+import mymodel
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_state():
-    import model
-
-    model = model.Backbone(50, 1., 'ir_se').to(device)
+    model = mymodel.Backbone(50, 1., 'ir_se').to(device)
     print('IR-SE-50 generated')
 
     checkpoint = torch.load("/data/hyeonjung/workspace/FPS/mProject/save/model_ir_se50.pth")
@@ -137,12 +135,12 @@ def calculate_sim_matrice(feature, g_mat):
     cls_num = len(g_mat)
     g_mat = torch.from_numpy(np.asarray(g_mat)).float()
     g_mat_tensor = Variable(g_mat)
-    # g_mat_tensor = F.normalize(g_mat_tensor, p=2, dim=1)
+    g_mat_tensor2 = F.normalize(g_mat_tensor, p=2, dim=1)
 
     probe_fv = torch.from_numpy(np.asarray(feature)).float()
     probe_fv_tensor = Variable(probe_fv)
     probe_fv_tensor = probe_fv_tensor.view(-1, 1)
-    # probe_fv_tensor = F.normalize(probe_fv_tensor, p=1, dim=1)
+    probe_fv_tensor2 = F.normalize(probe_fv_tensor, p=2, dim=1)
 
     dot_prod = torch.mm(g_mat_tensor, probe_fv_tensor).view(-1,)
     values, indices = torch.topk(dot_prod, cls_num)

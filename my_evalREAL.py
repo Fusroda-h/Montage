@@ -167,7 +167,7 @@ def calSim(feature, g_mat):
     probe_fv = torch.from_numpy(asarray(feature)).float()
     probe_fv_tensor = Variable(probe_fv)
     probe_fv_tensor = probe_fv_tensor.view(-1, 1)
-    # probe_fv_tensor = F.normalize(probe_fv_tensor, p=1, dim=1)
+    # probe_fv_tensor = F.normalize(probe_fv_tensor, p=2, dim=0)
     dot_prod = torch.mm(g_mat_tensor, probe_fv_tensor).view(-1,)
     values, indices = torch.topk(dot_prod, cls_num)
 

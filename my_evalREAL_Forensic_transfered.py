@@ -10,7 +10,6 @@ import argparse
 import sys
 from PIL import Image,ImageFile
 
-import iresnet as irsenet
 from pathlib import Path
 
 from numpy import *
@@ -22,27 +21,34 @@ import mymodel
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-Batchsize=4
-epochs=100
-minibatches=1000
+# Batchsize=4
+# epochs=100
+# minibatches=1000
 drop_ratio=0.3
-lr=1e-3
-weight_decay=1e-6
+# lr=1e-3
+# weight_decay=1e-6
 
 def load_state(model_path):
+    path='../Dataset/211022_Data/Images/Training_4_all_H/Trainset/sketch/'
+    dataclass = len(os.listdir(path))
     model = mymodel.Backbone(50,drop_ratio,'ir_se').to(device)
-    model= nn.Sequential(model,
-                        nn.Dropout(drop_ratio),
-                        nn.Linear(512,512),
-                        nn.BatchNorm1d(512),
-                        nn.ReLU(),
-                        nn.Dropout(drop_ratio),
-                        nn.Linear(512,1024),
-                        nn.BatchNorm1d(1024),
-                        nn.ReLU(),
-                        nn.Dropout(drop_ratio),
-                        nn.Linear(1024,1000),
-                        nn.BatchNorm1d(1000))
+    model.output_layer = nn.Sequential(nn.BatchNorm2d(512),
+                                    nn.Dropout(drop_ratio),
+                                    nn.Flatten(),
+                                    nn.Linear(512 * 7 * 7, dataclass),
+                                    nn.BatchNorm1d(dataclass))
+    # model= nn.Sequential(model,
+    #                     nn.Dropout(drop_ratio),
+    #                     nn.Linear(512,512),
+    #                     nn.BatchNorm1d(512),
+    #                     nn.ReLU(),
+    #                     nn.Dropout(drop_ratio),
+    #                     nn.Linear(512,1024),
+    #                     nn.BatchNorm1d(1024),
+    #                     nn.ReLU(),
+    #                     nn.Dropout(drop_ratio),
+    #                     nn.Linear(1024,1000),
+    #                     nn.BatchNorm1d(1000))
     print('Transfered IR-SE-50 generated')
 
     # load part of the weights
@@ -194,12 +200,13 @@ def calSim(feature, g_mat):
 
 def evaluate():
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    image_path = "../../Dataset/211022_Data/Images/Training_1_1000_H/Testset/gt/"
-    sketch_path = "../../Dataset/211022_Data/Images/Training_1_1000_H/Testset/sketch/"
+    ground_path='../Dataset/211022_Data/Images/Training_4_all_H/'
+    image_path = ground_path+"Testset/gt/"
+    sketch_path = ground_path+"Testset/sketch/"
     save_path = "../../Dataset/201022_Results/prediction/"
-    model_path='../../Dataset/211022_Data/Images/Training_1_1000_H/Results/model_120_211122.pt'
+    model_path = ground_path+'Results/model_120_211124.pt'
     model = load_state(model_path)
-    os.makedirs(save_path, exist_ok=True)
+    # os.makedirs(save_path, exist_ok=True)
 
     class_list, g_file, p_file = getGalnProbeSet(image_path,sketch_path)
     gall_mat = []

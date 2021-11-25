@@ -5,13 +5,13 @@ from torch.nn.modules.batchnorm import BatchNorm1d
 from torch.utils.data import DataLoader, dataloader
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose,Resize,CenterCrop,ToTensor,Normalize
-from torch.optim import Adam, optimizer
+from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 
 import os
 import numpy as np
 import argparse
 import sys
-from sklearn.preprocessing import OneHotEncoder
 from PIL import Image,ImageFile
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -103,9 +103,7 @@ def train_model(model, train_loader,criterion,optimizer,epoch):
     return train_loss
 
 def evaluate_model(model,test_loader,criterion,model_path):
-    torch.save({
-            'model_state_dict': model.state_dict()
-            }, model_path)
+    torch.save(model.state_dict(), model_path)
     model.eval()
     test_loss=0
     correct=0
@@ -154,6 +152,7 @@ def train():
     train_loss_lst=[]
     test_loss_lst=[]
     test_acc_lst=[]
+    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
 
     for epoch in tqdm(range(epochs)):
         train_loss=train_model(model,train_loader,criterion,optimizer,epoch)
@@ -162,6 +161,7 @@ def train():
         train_loss_lst.append(sum(train_loss)/len(train_loss))
         test_loss_lst.append(test_loss)
         test_acc_lst.append(test_acc)
+        scheduler.step()
 
     save_loss_plot(train_loss_lst,test_loss_lst,result_path)
 

@@ -4,7 +4,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader, dataloader
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose,Resize,CenterCrop,ToTensor,Normalize
-from torch.optim import Adam, optimizer
+from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 
 import os
 import numpy as np
@@ -23,9 +24,9 @@ Batchsize=4
 epochs=100
 minibatches=2000
 drop_ratio=0.3
-lr=1e-3
-weight_decay=1e-6
-resize=200
+lr=1e-6
+weight_decay=0.
+resize=120
 
 def load_model(path):
     dataclass = len(os.listdir(path))
@@ -96,9 +97,7 @@ def train_model(model, train_loader,criterion,optimizer,epoch,dataclass):
     return train_loss
 
 def evaluate_model(model,test_loader,criterion,model_path,dataclass):
-    torch.save({
-            'model_state_dict': model.state_dict()
-            }, model_path)
+    torch.save(model.state_dict(), model_path)
     model.eval()
     test_loss=0
     correct=0
@@ -115,6 +114,7 @@ def evaluate_model(model,test_loader,criterion,model_path,dataclass):
     test_loss /= len(test_loader)
     test_accuracy = 100. * correct / len(test_loader)
     return test_loss, test_accuracy
+
 
 def save_loss_plot(loss1,loss2,result_path):
     d=datetime.datetime.now()
@@ -136,17 +136,21 @@ def save_loss_plot(loss1,loss2,result_path):
     plt.tight_layout()
     fig.savefig(result_path+'Train1_loss_{}_{}.png'.format(epochs,d.strftime('%y%m%d_%H%M')),dpi=300)
 
+def earlystopping():
+    return 0
+
 def train():
     d=datetime.datetime.now()
     path='../Dataset/211022_Data/Images/Training_4_all_H/Trainset/sketch/'
     result_path='../Dataset/211022_Data/Images/Training_4_all_H/Results/'
     model_path='../Dataset/211022_Data/Images/Training_4_all_H/Results/model_{}_{}.pt'.format(resize,d.strftime('%y%m%d'))
-    model,dataclass=load_model(path)
+    model,dataclass = load_model(path)
     train_loader,val_loader = dataLoader(path)
     optimizer,criterion=set_opt(model)
     train_loss_lst=[]
     test_loss_lst=[]
     test_acc_lst=[]
+    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
 
     for epoch in tqdm(range(epochs)):
         train_loss=train_model(model,train_loader,criterion,optimizer,epoch,dataclass)
@@ -155,6 +159,7 @@ def train():
         train_loss_lst.append(sum(train_loss)/len(train_loss))
         test_loss_lst.append(test_loss)
         test_acc_lst.append(test_acc)
+        scheduler.step()
 
     save_loss_plot(train_loss_lst,test_loss_lst,result_path)
 
