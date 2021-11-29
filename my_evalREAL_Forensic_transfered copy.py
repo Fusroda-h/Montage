@@ -18,15 +18,18 @@ import operator
 from tqdm import tqdm
 import datetime
 import mymodel
+from torch.utils.tensorboard import SummaryWriter
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 # Batchsize=4
 # epochs=100
 # minibatches=1000
 drop_ratio=0.3
 # lr=1e-3
 # weight_decay=1e-6
+reSize=120
 
 def load_state(model_path):
     path='../Dataset/211022_Data/Images/Training_4_all_H/Trainset/sketch/'
@@ -143,7 +146,7 @@ def getLable(class_list):
 def extractFV(img_path, model):
 
     transforms = Compose([
-        Resize(200),
+        Resize(reSize),
         CenterCrop(112),
         ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
@@ -204,7 +207,7 @@ def evaluate():
     image_path = ground_path+"Testset/gt/"
     sketch_path = ground_path+"Testset/sketch/"
     save_path = "../Dataset/201022_Results/prediction/"
-    model_path = ground_path+'Results/model_200_211123.pt'
+    model_path = ground_path+'Results/model_120_211124.pt'
     model = load_state(model_path)
     # os.makedirs(save_path, exist_ok=True)
 
@@ -236,6 +239,21 @@ def evaluate():
     d=datetime.datetime.now()
     save_file_name = save_path + 'result' + d.strftime('%Y%m%d_%H%M')
     calnsaveResults(indices, rate_c, save_file_name)
+
+
+writer = SummaryWriter('runs/fashion_mnist_experiment_1')
+# 임의의 이미지들과 정답(target) 인덱스를 선택합니다
+images, labels = select_n_random(trainset.data, trainset.targets)
+
+# 각 이미지의 분류 라벨(class label)을 가져옵니다
+class_labels = [lab for lab in labels]
+
+# 임베딩(embedding) 내역을 기록합니다
+features = images.view(-1, 28 * 28)
+writer.add_embedding(features,
+                    metadata=class_labels,
+                    label_img=images.unsqueeze(1))
+writer.close()
 
 if __name__ == '__main__':
     evaluate()
