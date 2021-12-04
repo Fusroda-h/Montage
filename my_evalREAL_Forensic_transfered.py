@@ -32,23 +32,23 @@ def load_state(model_path):
     path='../Dataset/211022_Data/Images/Training_4_all_H/Trainset/sketch/'
     dataclass = len(os.listdir(path))
     model = mymodel.Backbone(50,drop_ratio,'ir_se').to(device)
-    model.output_layer = nn.Sequential(nn.BatchNorm2d(512),
-                                    nn.Dropout(drop_ratio),
-                                    nn.Flatten(),
-                                    nn.Linear(512 * 7 * 7, dataclass),
-                                    nn.BatchNorm1d(dataclass))
-    # model= nn.Sequential(model,
-    #                     nn.Dropout(drop_ratio),
-    #                     nn.Linear(512,512),
-    #                     nn.BatchNorm1d(512),
-    #                     nn.ReLU(),
-    #                     nn.Dropout(drop_ratio),
-    #                     nn.Linear(512,1024),
-    #                     nn.BatchNorm1d(1024),
-    #                     nn.ReLU(),
-    #                     nn.Dropout(drop_ratio),
-    #                     nn.Linear(1024,1000),
-    #                     nn.BatchNorm1d(1000))
+    # model.output_layer = nn.Sequential(nn.BatchNorm2d(512),
+    #                                 nn.Dropout(drop_ratio),
+    #                                 nn.Flatten(),
+    #                                 nn.Linear(512 * 7 * 7, dataclass),
+    #                                 nn.BatchNorm1d(dataclass))
+    model= nn.Sequential(model,
+                        nn.Dropout(drop_ratio),
+                        nn.Linear(512,512),
+                        nn.BatchNorm1d(512),
+                        nn.ReLU(),
+                        nn.Dropout(drop_ratio),
+                        nn.Linear(512,1024),
+                        nn.BatchNorm1d(1024),
+                        nn.ReLU(),
+                        nn.Dropout(drop_ratio),
+                        nn.Linear(1024,1000),
+                        nn.BatchNorm1d(1000))
     print('Transfered IR-SE-50 generated')
 
     # load part of the weights

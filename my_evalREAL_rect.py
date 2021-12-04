@@ -10,7 +10,6 @@ import argparse
 import sys
 from PIL import Image,ImageFile
 
-import iresnet as irsenet
 from pathlib import Path
 
 from numpy import *
@@ -144,7 +143,7 @@ def getGalnProbeSet(image_path,sketch_path):
         img_title = img_ele[:-4]
         cls_list.append(img_title)
         for sketch_ele in sketch_list:
-            label = sketch_ele.split('.')[0] # For org_sketch: '.', sketch/H/: '_'
+            label = sketch_ele.split('_')[0] # For org_sketch: '.', sketch/H/: '_'
             if img_title == label:
                 p_file.append(sketch_path + sketch_ele)
         total_path = image_path + img_ele
@@ -175,8 +174,6 @@ def calSim(feature, g_mat):
 
 def match_sim(gall_mat,p_file):
     
-
-
     return 0
 
 def evaluate():
