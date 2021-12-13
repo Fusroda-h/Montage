@@ -136,27 +136,25 @@ def getGalnProbeSet(image_path,sketch_path):
     sketch_list = os.listdir(sketch_path)
 
     p_file = []
-    cls_list = []
+    cls_dict = {}
     gall_list = []
 
-    for img_ele in img_list:
+    for i,img_ele in enumerate(img_list):
         img_title = img_ele[:-4]
-        cls_list.append(img_title)
+        cls_dict[i] = img_title
         for sketch_ele in sketch_list:
-            label = sketch_ele.split('_')[0] # For org_sketch: '.', sketch/H/: '_'
-            if img_title == label:
+            label = sketch_ele.split('.')[0] # For org_sketch: '.', sketch/H/: '_'
+            if img_title in label:
                 p_file.append(sketch_path + sketch_ele)
         total_path = image_path + img_ele
         gall_list.append(total_path)
 
-    print("Number of GT_list :")
-    print(len(gall_list))
-    print("Number of files to predict :")
-    print(len(p_file))
+    print("Number of fiels in Gallery :",len(gall_list))
+    print("Number of files to probe :",len(p_file),end='\n')
 
-    return cls_list, gall_list, p_file
+    return cls_dict, gall_list, p_file
 
-def calSim(feature, g_mat):
+def calSim(feature, g_mat, ranknum):
 
     cls_num = len(g_mat)
     g_mat = torch.from_numpy(asarray(g_mat)).float()
@@ -170,48 +168,64 @@ def calSim(feature, g_mat):
     dot_prod = torch.mm(g_mat_tensor, probe_fv_tensor).view(-1,)
     values, indices = torch.topk(dot_prod, cls_num)
 
-    return values, indices
+    return indices[:ranknum]
 
-def match_sim(gall_mat,p_file):
+def evalrank(model,classdict,pfile,gall_mat,ranknum):
+    count=0
+    pred_files = []
+    for p in pfile:
+        p_fv = extractFV(p,model)
+        indice = calSim(p_fv,gall_mat,ranknum)
+        plus=0
+        pname = p.split('/')[-1].split('.')[0]
+        for i in indice:
+            if classdict[int(i)] in pname: # probe name must include gt / adding 'fake'
+                plus+=1
+            if plus > 1:
+                print('Multiple class error')
+        count+=plus
+    try:
+        accuracy = count/len(pfile)*100
+    except:
+        print("pfile 0")
+        accuracy=0
     
-    return 0
+    return accuracy
 
-def evaluate():
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    model = load_state()
-    image_path = "../Dataset/211022_Data/Images/Training_2_1000/Trainset/gt/"
-    sketch_path = "../Dataset/211022_Data/Images/Training_2_1000/Trainset/org_sketch/"
-    save_path = "../Dataset/201022_Results/prediction/"
-    os.makedirs(save_path, exist_ok=True)
-
-    class_list, g_file, p_file = getGalnProbeSet(image_path,sketch_path)
+def match_sim(model,image_path,sketch_path,ranknum):
+    classdict, gfile, pfile = getGalnProbeSet(image_path,sketch_path)
     gall_mat = []
-
-    for ele in g_file:
-        fv = extractFV(ele, model)
+    for ele in gfile:
+        fv = extractFV(ele,model)
         gall_mat.append(fv)
+    
+    # print one ranknum accuracy
+    accuracy = evalrank(model,classdict,pfile,gall_mat,ranknum)
+    print('[ Accuracy of RANK{} ] : {:.4f}'.format(ranknum,accuracy))
 
-    rate_c = []
-    print("********* probe_file length: ", len(p_file))
-    label = getLable(class_list)
+    return accuracy
+    # for k in ranknum:
+    #     accuracy = evalrank(model,classdict,pfile,gall_mat,ranknum)
 
-    for iter, f in tqdm(enumerate(p_file)):
-        # print("[", iter, "] curr file: ", f)
-        f_split = f.split('/')[-1].split('.')[0] # For org_sketch: '.', sketch/H/: '_'
-        for label_ele in class_list:
-            if label_ele == f_split:
-                curr_label = label[label_ele]
+def eval():
+    ground_path = '../Dataset/Face_detection_image/'
+    image_path = ground_path+'Virtual_human_image/selected_image/sorted_all/'
+    save_path = "../Dataset/201022_Results/prediction/"
+    model_path = ground_path+'Results/model_200_211123.pt'
+    model = load_state()
 
-        pivot_fv = extractFV(f, model)
-        values, indices = calSim(pivot_fv, gall_mat)
-
-        for idx_c, pred_lable in enumerate(indices):
-            if pred_lable == curr_label:
-                rate_c.append(idx_c)
-                break
-    d=datetime.datetime.now()
-    save_file_name = save_path + 'result' + d.strftime('%Y_%m_%d_%H_%M')
-    calnsaveResults(indices, rate_c, save_file_name)
+    gender = ['M','W']
+    age = [20,30,40,50,60]
+    k = [1,5]
+    acc_all =[]
+    for i in k:
+        for g in gender:
+            for a in age:
+                sketch_path = ground_path+'Montage_image/{}_{}_Montage/'.format(g,a)
+                ranknum = i
+                acc = match_sim(model,image_path,sketch_path,ranknum)
+                acc_all.append(acc)
+    print(acc_all)
 
 if __name__ == '__main__':
-    evaluate()
+    eval()

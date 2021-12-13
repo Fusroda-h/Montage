@@ -1,36 +1,48 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-from torch.utils.data import DataLoader, dataloader
+from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose,Resize,CenterCrop,ToTensor,Normalize
 from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 
 import os
-import numpy as np
-import argparse
-import sys
-from PIL import Image,ImageFile
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import ImageFile
+from tqdm import tqdm
 
 import mymodel
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+###############################
+
+# Batch size
 Batchsize=4
-epochs=200
+# Epoch
+epochs=100
+# Print Train loss in interval of minibatch
 minibatches=2000
+# Dropdout ratio of the whole model
 drop_ratio=0.3
-lr=1e-3
-weight_decay=0.
-resize=120
+# Learning rate
+lr = 1e-6 
+# Adam weight decay rate
+weight_decay = 0.
+# Decide image to resize before its center cropped
+resize = 120
+# Scheduler step and gamma ecx) Multiply 0.1 to learning rate in every 30 epoch
+sched_step = 30
+sched_gamma = 0.1
+
+###############################
 
 def load_model(path):
     dataclass = len(os.listdir(path))
-    model = mymodel.Backbone(152,drop_ratio,'ir_se')
+    model = mymodel.Backbone(50,drop_ratio,'ir_se')
     model.output_layer = nn.Sequential(nn.BatchNorm2d(512),
                                        nn.Dropout(drop_ratio),
                                        nn.Flatten(),
@@ -141,16 +153,16 @@ def earlystopping():
 
 def train():
     d=datetime.datetime.now()
-    path='../Dataset/211022_Data/Images/Training_1_1000_H/Trainset/sketch/'
-    result_path='../Dataset/211022_Data/Images/Training_1_1000_H/Results/'
-    model_path='../Dataset/211022_Data/Images/Training_1_1000_H/Results/model_{}_{}_152_1e3.pt'.format(resize,d.strftime('%y%m%d'))
+    path='../Dataset/211022_Data/Images/Training_4_all_H/Trainset/sketch/'
+    result_path='../Dataset/211022_Data/Images/Training_4_all_H/Results/'
+    model_path='../Dataset/211022_Data/Images/Training_4_all_H/Results/model_{}_{}.pt'.format(resize,d.strftime('%y%m%d'))
     model,dataclass = load_model(path)
     train_loader,val_loader = dataLoader(path)
     optimizer,criterion=set_opt(model)
     train_loss_lst=[]
     test_loss_lst=[]
     test_acc_lst=[]
-    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=sched_step, gamma=sched_gamma)
 
     for epoch in tqdm(range(epochs)):
         train_loss=train_model(model,train_loader,criterion,optimizer,epoch,dataclass)
